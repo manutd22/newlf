@@ -13,7 +13,7 @@
     "preview": "vite preview",
     "predeploy": "npm run build",
     "start:frontend": "vite",
-    "start:backend": "node server/index.js",
+    "start:backend":"cd backend && npm run start:dev",
     "start": "concurrently \"npm run start:frontend\" \"npm run start:backend\""
   },
   "dependencies": {
