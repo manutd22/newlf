@@ -3,10 +3,13 @@ import {
   bindMiniAppCSSVars,
   bindThemeParamsCSSVars,
   bindViewportCSSVars,
-  initNavigator, useLaunchParams,
+  initNavigator,
+  useLaunchParams,
   useMiniApp,
   useThemeParams,
   useViewport,
+  useInitData,
+  InitData,
 } from '@telegram-apps/sdk-react';
 import { AppRoot } from '@telegram-apps/telegram-ui';
 import { type FC, useEffect, useMemo } from 'react';
@@ -16,14 +19,38 @@ import {
   Router,
   Routes,
 } from 'react-router-dom';
+import axios from 'axios';
 
 import { routes } from '@/navigation/routes.tsx';
+
+const BACKEND_URL = 'https://204d-78-84-0-200.ngrok-free.app';
+
+const saveTelegramUser = async (initData: InitData) => {
+  console.log('Attempting to save user data:');
+  console.log('initData:', initData);
+
+  try {
+    const response = await axios.post(`${BACKEND_URL}/users/save-telegram-user`, {
+      initData: JSON.stringify(initData)
+    }, {
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+    console.log('Response status:', response.status);
+    console.log('Response data:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Failed to save user data:', error);
+    throw error;
+  }
+};
 
 export const App: FC = () => {
   const lp = useLaunchParams();
   const miniApp = useMiniApp();
   const themeParams = useThemeParams();
   const viewport = useViewport();
+  const initData = useInitData();
 
   useEffect(() => {
     return bindMiniAppCSSVars(miniApp, themeParams);
@@ -36,6 +63,21 @@ export const App: FC = () => {
   useEffect(() => {
     return viewport && bindViewportCSSVars(viewport);
   }, [viewport]);
+
+  useEffect(() => {
+    const saveUser = async () => {
+      if (initData) {
+        try {
+          await saveTelegramUser(initData);
+          console.log('User data saved successfully');
+        } catch (error) {
+          console.error('Error saving user data:', error);
+        }
+      }
+    };
+
+    saveUser();
+  }, [initData]);
 
   // Create a new application navigator and attach it to the browser history, so it could modify
   // it and listen to its changes.
