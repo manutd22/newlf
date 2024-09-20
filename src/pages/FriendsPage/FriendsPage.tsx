@@ -1,7 +1,7 @@
 import { FC, useState, useEffect, useCallback } from 'react';
 import { Button } from '@telegram-apps/telegram-ui';
 import { initUtils, useLaunchParams } from '@telegram-apps/sdk-react';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 
 interface Referral {
   id?: number;
@@ -57,41 +57,63 @@ export const FriendsPage: FC = () => {
   }, []);
 
   const fetchReferrals = useCallback(async () => {
-    console.log('Fetching referrals...');
-    if (!lp.initData?.user?.id) {
-      console.warn('User ID not available');
-      showPopup('Ошибка', 'ID пользователя недоступен');
-      setIsLoading(false);
-      return;
+  console.log('Fetching referrals...');
+  if (!lp.initData?.user?.id) {
+    console.warn('User ID not available');
+    showPopup('Ошибка', 'ID пользователя недоступен');
+    setIsLoading(false);
+    return;
+  }
+
+  try {
+    setIsLoading(true);
+    const response = await axios.get(`${BACKEND_URL}/users/${lp.initData.user.id}/referrals`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+      },
+      withCredentials: true,
+    });
+    console.log('Full response:', response);
+    console.log('Response headers:', response.headers);
+    console.log('Response data:', response.data);
+
+    if (Array.isArray(response.data)) {
+      setReferrals(response.data);
+    } else if (response.data && Array.isArray(response.data.data)) {
+      setReferrals(response.data.data);
+    } else {
+      console.error('Unexpected response format:', response.data);
+      showPopup('Ошибка', 'Получен неожиданный формат данных. Проверьте консоль для деталей.');
+      setError('Неожиданный формат данных');
     }
-
-    try {
-      setIsLoading(true);
-      const response = await axios.get(`${BACKEND_URL}/users/${lp.initData.user.id}/referrals`, {
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      });
-      console.log('Referrals response:', response);
-      console.log('Response data structure:', JSON.stringify(response.data));
-
-      if (Array.isArray(response.data)) {
-        setReferrals(response.data);
-      } else if (response.data && Array.isArray(response.data.data)) {
-        setReferrals(response.data.data);
+  } catch (err) {
+    console.error('Error fetching referrals:', err);
+    let errorMessage = 'Неизвестная ошибка';
+    
+    if (axios.isAxiosError(err)) {
+      const axiosError = err as AxiosError;
+      if (axiosError.response) {
+        console.error('Error response:', axiosError.response);
+        console.error('Error response data:', axiosError.response.data);
+        errorMessage = `Ошибка сервера: ${axiosError.response.status}`;
+      } else if (axiosError.request) {
+        console.error('No response received:', axiosError.request);
+        errorMessage = 'Нет ответа от сервера';
       } else {
-        console.error('Unexpected response format:', response.data);
-        showPopup('Ошибка', 'Получен неожиданный формат данных. Проверьте консоль для деталей.');
-        setError('Неожиданный формат данных');
+        console.error('Error setting up request:', axiosError.message);
+        errorMessage = `Ошибка запроса: ${axiosError.message}`;
       }
-    } catch (err) {
-      console.error('Error fetching referrals:', err);
-      showPopup('Ошибка', 'Не удалось загрузить рефералов. Пожалуйста, попробуйте позже.');
-      setError('Ошибка загрузки рефералов');
-    } finally {
-      setIsLoading(false);
+    } else if (err instanceof Error) {
+      errorMessage = err.message;
     }
-  }, [lp.initData?.user?.id, showPopup]);
+    
+    showPopup('Ошибка', `Не удалось загрузить рефералов: ${errorMessage}`);
+    setError(`Ошибка загрузки рефералов: ${errorMessage}`);
+  } finally {
+    setIsLoading(false);
+  }
+}, [lp.initData?.user?.id, showPopup]);
 
   useEffect(() => {
     fetchReferrals();
