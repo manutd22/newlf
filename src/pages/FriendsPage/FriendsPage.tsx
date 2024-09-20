@@ -33,7 +33,7 @@ declare global {
 }
 
 const utils = initUtils();
-const BACKEND_URL = 'https://be57-78-84-0-200.ngrok-free.app';
+const BACKEND_URL = 'https://bfcf5691dfbbb3d70bb82fdaf03ac07c.serveo.net';
 const BOT_USERNAME = 'newcary_bot';
 const APP_NAME = 'newcae';
 

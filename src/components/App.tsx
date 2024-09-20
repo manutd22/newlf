@@ -21,7 +21,7 @@ import axios from 'axios';
 
 import { routes } from '@/navigation/routes.tsx';
 
-const BACKEND_URL = 'https://be57-78-84-0-200.ngrok-free.app'; // Замените на ваш реальный URL бэкенда
+const BACKEND_URL = 'https://bfcf5691dfbbb3d70bb82fdaf03ac07c.serveo.net'; // Замените на ваш реальный URL бэкенда
 
 const saveTelegramUser = async (initDataRaw: string) => {
   try {
