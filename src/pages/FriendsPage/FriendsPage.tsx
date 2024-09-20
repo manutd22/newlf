@@ -1,5 +1,4 @@
 import { FC, useState, useEffect, useCallback } from 'react';
-import { Button } from '@telegram-apps/telegram-ui';
 import { initUtils, useLaunchParams } from '@telegram-apps/sdk-react';
 import axios, { AxiosError } from 'axios';
 
@@ -57,63 +56,65 @@ export const FriendsPage: FC = () => {
   }, []);
 
   const fetchReferrals = useCallback(async () => {
-  console.log('Fetching referrals...');
-  if (!lp.initData?.user?.id) {
-    console.warn('User ID not available');
-    showPopup('Ошибка', 'ID пользователя недоступен');
-    setIsLoading(false);
-    return;
-  }
-
-  try {
-    setIsLoading(true);
-    const response = await axios.get(`${BACKEND_URL}/users/${lp.initData.user.id}/referrals`, {
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest',
-      },
-      withCredentials: true,
-    });
-    console.log('Full response:', response);
-    console.log('Response headers:', response.headers);
-    console.log('Response data:', response.data);
-
-    if (Array.isArray(response.data)) {
-      setReferrals(response.data);
-    } else if (response.data && Array.isArray(response.data.data)) {
-      setReferrals(response.data.data);
-    } else {
-      console.error('Unexpected response format:', response.data);
-      showPopup('Ошибка', 'Получен неожиданный формат данных. Проверьте консоль для деталей.');
-      setError('Неожиданный формат данных');
+    console.log('Fetching referrals...');
+    if (!lp.initData?.user?.id) {
+      console.warn('User ID not available');
+      showPopup('Ошибка', 'ID пользователя недоступен');
+      setIsLoading(false);
+      return;
     }
-  } catch (err) {
-    console.error('Error fetching referrals:', err);
-    let errorMessage = 'Неизвестная ошибка';
-    
-    if (axios.isAxiosError(err)) {
-      const axiosError = err as AxiosError;
-      if (axiosError.response) {
-        console.error('Error response:', axiosError.response);
-        console.error('Error response data:', axiosError.response.data);
-        errorMessage = `Ошибка сервера: ${axiosError.response.status}`;
-      } else if (axiosError.request) {
-        console.error('No response received:', axiosError.request);
-        errorMessage = 'Нет ответа от сервера';
+
+    try {
+      setIsLoading(true);
+      const response = await axios.get(`${BACKEND_URL}/users/${lp.initData.user.id}/referrals`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+        withCredentials: true,
+      });
+      console.log('Full response:', response);
+      console.log('Response headers:', response.headers);
+      console.log('Response data:', response.data);
+
+      if (Array.isArray(response.data)) {
+        setReferrals(response.data);
+      } else if (response.data && Array.isArray(response.data.data)) {
+        setReferrals(response.data.data);
+      } else if (response.data === null || (Array.isArray(response.data) && response.data.length === 0)) {
+        setReferrals([]);
       } else {
-        console.error('Error setting up request:', axiosError.message);
-        errorMessage = `Ошибка запроса: ${axiosError.message}`;
+        console.error('Unexpected response format:', response.data);
+        showPopup('Ошибка', 'Получен неожиданный формат данных. Проверьте консоль для деталей.');
+        setError('Неожиданный формат данных');
       }
-    } else if (err instanceof Error) {
-      errorMessage = err.message;
+    } catch (err) {
+      console.error('Error fetching referrals:', err);
+      let errorMessage = 'Неизвестная ошибка';
+      
+      if (axios.isAxiosError(err)) {
+        const axiosError = err as AxiosError;
+        if (axiosError.response) {
+          console.error('Error response:', axiosError.response);
+          console.error('Error response data:', axiosError.response.data);
+          errorMessage = `Ошибка сервера: ${axiosError.response.status}`;
+        } else if (axiosError.request) {
+          console.error('No response received:', axiosError.request);
+          errorMessage = 'Нет ответа от сервера';
+        } else {
+          console.error('Error setting up request:', axiosError.message);
+          errorMessage = `Ошибка запроса: ${axiosError.message}`;
+        }
+      } else if (err instanceof Error) {
+        errorMessage = err.message;
+      }
+      
+      showPopup('Ошибка', `Не удалось загрузить рефералов: ${errorMessage}`);
+      setError(`Ошибка загрузки рефералов: ${errorMessage}`);
+    } finally {
+      setIsLoading(false);
     }
-    
-    showPopup('Ошибка', `Не удалось загрузить рефералов: ${errorMessage}`);
-    setError(`Ошибка загрузки рефералов: ${errorMessage}`);
-  } finally {
-    setIsLoading(false);
-  }
-}, [lp.initData?.user?.id, showPopup]);
+  }, [lp.initData?.user?.id, showPopup]);
 
   useEffect(() => {
     fetchReferrals();
@@ -152,48 +153,7 @@ export const FriendsPage: FC = () => {
     }
   }, [generateInviteLink, showPopup]);
 
-  useEffect(() => {
-    const handleReferral = async () => {
-      const startParam = lp.initData?.startParam;
-      if (lp.initData?.user?.id) {
-        try {
-          if (startParam && startParam.startsWith('invite_')) {
-            // Обработка через startParam (для веб-версии)
-            await axios.post(`${BACKEND_URL}/users/process-referral`, {
-              userId: lp.initData.user.id,
-              startParam: startParam
-            });
-            showPopup('Success', 'You have been successfully referred!');
-          } else {
-            // Проверка сохраненной информации о реферале (для мобильных устройств)
-            const response = await axios.get(`${BACKEND_URL}/users/${APP_NAME}/check-referral`, {
-              params: { userId: lp.initData.user.id }
-            });
-            if (response.data.success) {
-              showPopup('Success', 'Referral information processed successfully!');
-            }
-          }
-        } catch (error) {
-          console.error('Error processing referral:', error);
-          showPopup('Error', 'Failed to process referral. Please try again later.');
-        }
-      }
-    };
-
-    handleReferral();
-  }, [lp.initData?.user?.id, lp.initData?.startParam, showPopup]);
-
-  if (error) {
-    return (
-      <div style={{ padding: '20px', textAlign: 'center' }}>
-        <h2>Error loading referrals</h2>
-        <p>{error}</p>
-        <Button onClick={fetchReferrals}>Try Again</Button>
-      </div>
-    );
-  }
-
-   return (
+  return (
     <div>
       <h1>Пригласить друзей</h1>
       <button onClick={shareInviteLink}>Пригласить</button>
@@ -214,7 +174,7 @@ export const FriendsPage: FC = () => {
           ))}
         </ul>
       ) : (
-        <p>Рефералов пока нет</p>
+        <p>У вас пока нет рефералов</p>
       )}
     </div>
   );
