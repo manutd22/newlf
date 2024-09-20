@@ -10,7 +10,6 @@ interface Referral {
   lastName?: string;
 }
 
-// Расширенное определение типа для Telegram WebApp
 declare global {
   interface Window {
     Telegram?: {
@@ -41,10 +40,10 @@ const APP_NAME = 'newcae';
 export const FriendsPage: FC = () => {
   const [referrals, setReferrals] = useState<Referral[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const lp = useLaunchParams();
   
-   const showPopup = useCallback((title: string, message: string) => {
+  const showPopup = useCallback((title: string, message: string) => {
     if (window.Telegram?.WebApp?.showPopup) {
       window.Telegram.WebApp.showPopup({
         title,
@@ -61,7 +60,7 @@ export const FriendsPage: FC = () => {
     console.log('Fetching referrals...');
     if (!lp.initData?.user?.id) {
       console.warn('User ID not available');
-      showPopup('Error', 'User ID not available');
+      showPopup('Ошибка', 'ID пользователя недоступен');
       setIsLoading(false);
       return;
     }
@@ -74,16 +73,21 @@ export const FriendsPage: FC = () => {
         }
       });
       console.log('Referrals response:', response);
+      console.log('Response data structure:', JSON.stringify(response.data));
 
       if (Array.isArray(response.data)) {
         setReferrals(response.data);
+      } else if (response.data && Array.isArray(response.data.data)) {
+        setReferrals(response.data.data);
       } else {
         console.error('Unexpected response format:', response.data);
-        showPopup('Error', 'Unexpected data format received');
+        showPopup('Ошибка', 'Получен неожиданный формат данных. Проверьте консоль для деталей.');
+        setError('Неожиданный формат данных');
       }
     } catch (err) {
       console.error('Error fetching referrals:', err);
-      showPopup('Error', 'Failed to load referrals. Please try again later.');
+      showPopup('Ошибка', 'Не удалось загрузить рефералов. Пожалуйста, попробуйте позже.');
+      setError('Ошибка загрузки рефералов');
     } finally {
       setIsLoading(false);
     }
@@ -169,24 +173,26 @@ export const FriendsPage: FC = () => {
 
    return (
     <div>
-      <h1>Invite Friends</h1>
-      <button onClick={shareInviteLink}>Invite</button>
-      <button onClick={copyInviteLink}>Copy Link</button>
-      <h2>Your Referrals</h2>
+      <h1>Пригласить друзей</h1>
+      <button onClick={shareInviteLink}>Пригласить</button>
+      <button onClick={copyInviteLink}>Скопировать ссылку</button>
+      <h2>Ваши рефералы</h2>
       {isLoading ? (
-        <p>Loading referrals...</p>
+        <p>Загрузка рефералов...</p>
+      ) : error ? (
+        <p>Ошибка: {error}</p>
       ) : referrals.length > 0 ? (
         <ul>
           {referrals.map((referral, index) => (
             <li key={referral.id || index}>
-              {referral.firstName || referral.username || 'Unknown User'} 
+              {referral.firstName || referral.username || 'Неизвестный пользователь'} 
               {referral.lastName ? ` ${referral.lastName}` : ''}
               {referral.username ? ` (@${referral.username})` : ''}
             </li>
           ))}
         </ul>
       ) : (
-        <p>No referrals yet</p>
+        <p>Рефералов пока нет</p>
       )}
     </div>
   );
