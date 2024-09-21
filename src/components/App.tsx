@@ -18,10 +18,11 @@ import {
   Routes,
 } from 'react-router-dom';
 import axios from 'axios';
+import { BalanceProvider } from '@/context/balanceContext';
 
 import { routes } from '@/navigation/routes.tsx';
 
-const BACKEND_URL = 'https://6f691b8574e195c87cb8e29a69698f15.serveo.net'; // Замените на ваш реальный URL бэкенда
+const BACKEND_URL = 'https://354ed5448356dddc67931c0b698d2ed1.serveo.net'; // Замените на ваш реальный URL бэкенда
 
 const saveTelegramUser = async (initDataRaw: string) => {
   try {
@@ -99,12 +100,16 @@ export const App: FC = () => {
       appearance={miniApp.isDark ? 'dark' : 'light'}
       platform={['macos', 'ios'].includes(lp.platform) ? 'ios' : 'base'}
     >
-      <Router location={location} navigator={reactNavigator}>
-        <Routes>
-          {routes.map((route) => <Route key={route.path} {...route} />)}
-          <Route path='*' element={<Navigate to='/'/>}/>
-        </Routes>
-      </Router>
+      <BalanceProvider>
+        <Router location={location} navigator={reactNavigator}>
+          <Routes>
+            {routes.map((route) => (
+              <Route key={route.path} path={route.path} element={<route.Component />} />
+            ))}
+            <Route path="*" element={<Navigate to="/" />} />
+          </Routes>
+        </Router>
+      </BalanceProvider>
     </AppRoot>
   );
 };

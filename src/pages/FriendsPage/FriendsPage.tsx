@@ -1,6 +1,7 @@
 import { FC, useState, useEffect, useCallback } from 'react';
 import { initUtils, useLaunchParams } from '@telegram-apps/sdk-react';
 import axios, { AxiosError } from 'axios';
+import { NavigationBar } from '@/components/NavigationBar/NavigationBar';
 
 interface Referral {
   id?: number;
@@ -32,7 +33,7 @@ declare global {
 }
 
 const utils = initUtils();
-const BACKEND_URL = 'https://6f691b8574e195c87cb8e29a69698f15.serveo.net';
+const BACKEND_URL = 'https://354ed5448356dddc67931c0b698d2ed1.serveo.net';
 const BOT_USERNAME = 'newcary_bot';
 const APP_NAME = 'newcae';
 
@@ -154,7 +155,7 @@ export const FriendsPage: FC = () => {
   }, [generateInviteLink, showPopup]);
 
   return (
-    <div>
+    <div style={{ paddingBottom: '60px' }}> {/* Добавляем отступ снизу для NavigationBar */}
       <h1>Пригласить друзей</h1>
       <button onClick={shareInviteLink}>Пригласить</button>
       <button onClick={copyInviteLink}>Скопировать ссылку</button>
@@ -176,6 +177,7 @@ export const FriendsPage: FC = () => {
       ) : (
         <p>У вас пока нет рефералов</p>
       )}
+      <NavigationBar /> {/* Добавляем NavigationBar в конец компонента */}
     </div>
   );
 };
