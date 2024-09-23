@@ -9,10 +9,9 @@ interface Quest {
   title: string;
   reward: number;
   type: string;
-  isCompleted: boolean;
 }
 
-const BACKEND_URL = 'https://7c6a0912c4c10c904c4cd1beac1ad83e.serveo.net';
+const BACKEND_URL = 'https://06a7f0008251691636bca2e41b13a319.serveo.net';
 
 export const QuestsComponent: React.FC = () => {
   const [quests, setQuests] = useState<Quest[]>([]);
@@ -43,6 +42,17 @@ export const QuestsComponent: React.FC = () => {
   const handleQuestCompletion = async (quest: Quest) => {
     try {
       const userId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
+      
+      if (quest.type === 'CHANNEL_SUBSCRIPTION') {
+        const subscriptionCheck = await axios.get(`${BACKEND_URL}/quests/check-subscription`, {
+          params: { userId }
+        });
+        if (!subscriptionCheck.data.isSubscribed) {
+          alert("Пожалуйста, подпишитесь на канал, чтобы выполнить этот квест.");
+          return;
+        }
+      }
+      
       const response = await axios.post(`${BACKEND_URL}/quests/complete`, {
         userId,
         questId: quest.id
@@ -50,7 +60,7 @@ export const QuestsComponent: React.FC = () => {
 
       if (response.data.success) {
         addToBalance(quest.reward);
-        setQuests(quests.map(q => q.id === quest.id ? { ...q, isCompleted: true } : q));
+        setQuests(quests.filter(q => q.id !== quest.id));
       } else {
         throw new Error(response.data.message || 'Не удалось выполнить квест');
       }
@@ -68,12 +78,7 @@ export const QuestsComponent: React.FC = () => {
     value: (
       <>
         <span>Reward: {quest.reward} BallCry</span>
-        {!quest.isCompleted && (
-          <Button onClick={() => handleQuestCompletion(quest)} style={{ marginLeft: '10px' }}>Complete</Button>
-        )}
-        {quest.isCompleted && (
-          <span style={{ marginLeft: '10px', color: 'green' }}>Completed</span>
-        )}
+        <Button onClick={() => handleQuestCompletion(quest)} style={{ marginLeft: '10px' }}>Complete</Button>
       </>
     )
   }));

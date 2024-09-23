@@ -33,7 +33,7 @@ declare global {
 }
 
 const utils = initUtils();
-const BACKEND_URL = 'https://7c6a0912c4c10c904c4cd1beac1ad83e.serveo.net';
+const BACKEND_URL = 'https://06a7f0008251691636bca2e41b13a319.serveo.net';
 const BOT_USERNAME = 'newcary_bot';
 const APP_NAME = 'newcae';
 
