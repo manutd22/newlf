@@ -1,25 +1,26 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useLaunchParams } from '@telegram-apps/sdk-react';
 import axios from 'axios';
 import { Button } from '@telegram-apps/telegram-ui';
 import { DisplayData, DisplayDataRow } from '@/components/DisplayData/DisplayData';
 import { useBalance } from '../../context/balanceContext';
+import { initUtils } from '@telegram-apps/sdk-react';
 
 interface Quest {
   id: number;
   title: string;
   reward: number;
   type: string;
+  channelUsername?: string;
 }
 
-const BACKEND_URL = 'https://f229ca7dce08cecc50fea81e2829acf7.serveo.net';
+const utils = initUtils();
+const BACKEND_URL = 'https://c9ef543a6819bed5c8df26556c8997b1.serveo.net';
 
 export const QuestsComponent: React.FC = () => {
   const [quests, setQuests] = useState<Quest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { addToBalance } = useBalance();
-  const lp = useLaunchParams();
 
   const showPopup = useCallback((title: string, message: string) => {
     if (window.Telegram?.WebApp?.showPopup) {
@@ -29,23 +30,19 @@ export const QuestsComponent: React.FC = () => {
         buttons: [{ type: 'ok' }]
       });
     } else {
-      console.warn('Telegram WebApp API is not available');
       alert(`${title}: ${message}`);
     }
   }, []);
 
-  const fetchQuests = useCallback(async () => {
-    console.log('Fetching quests...');
-    if (!lp.initData?.user?.id) {
-      console.warn('User ID not available');
-      showPopup('Ошибка', 'ID пользователя недоступен');
-      setIsLoading(false);
-      return;
-    }
+  const getUserId = useCallback(() => {
+    return window.Telegram?.WebApp?.initDataUnsafe?.user?.id || 'test_user_id';
+  }, []);
 
+  const fetchQuests = useCallback(async () => {
+    const userId = getUserId();
     try {
       const response = await axios.get(`${BACKEND_URL}/quests`, {
-        params: { userId: lp.initData.user.id }
+        params: { userId }
       });
       setQuests(response.data);
       setIsLoading(false);
@@ -55,31 +52,47 @@ export const QuestsComponent: React.FC = () => {
       setError("Failed to load quests. Please try again later.");
       setIsLoading(false);
     }
-  }, [lp.initData?.user?.id, showPopup]);
+  }, [getUserId, showPopup]);
 
   useEffect(() => {
     fetchQuests();
   }, [fetchQuests]);
 
-  const handleQuestCompletion = async (quest: Quest) => {
-    if (!lp.initData?.user?.id) {
-      showPopup('Ошибка', 'ID пользователя недоступен');
+  const handleChannelSubscription = async (quest: Quest) => {
+    if (!quest.channelUsername) {
+      showPopup('Ошибка', 'Не указано имя канала для подписки.');
       return;
     }
 
+    const channelUrl = `https://t.me/${quest.channelUsername}`;
+    
+    utils.openTelegramLink(channelUrl);
+
+    showPopup('Подписка на канал', 'Пожалуйста, подпишитесь на канал и затем нажмите "Проверить подписку".');
+  };
+
+  const checkSubscription = async (quest: Quest) => {
+    const userId = getUserId();
     try {
-      if (quest.type === 'CHANNEL_SUBSCRIPTION') {
-        const subscriptionCheck = await axios.get(`${BACKEND_URL}/quests/check-subscription`, {
-          params: { userId: lp.initData.user.id }
-        });
-        if (!subscriptionCheck.data.isSubscribed) {
-          showPopup('Ошибка', 'Пожалуйста, подпишитесь на канал, чтобы выполнить этот квест.');
-          return;
-        }
+      const subscriptionCheck = await axios.get(`${BACKEND_URL}/quests/check-subscription`, {
+        params: { userId, channelUsername: quest.channelUsername }
+      });
+      if (subscriptionCheck.data.isSubscribed) {
+        await completeQuest(quest);
+      } else {
+        showPopup('Ошибка', 'Вы не подписаны на канал. Пожалуйста, подпишитесь и попробуйте снова.');
       }
-      
+    } catch (error) {
+      console.error("Error checking subscription:", error);
+      showPopup('Ошибка', 'Не удалось проверить подписку. Пожалуйста, попробуйте позже.');
+    }
+  };
+
+  const completeQuest = async (quest: Quest) => {
+    const userId = getUserId();
+    try {
       const response = await axios.post(`${BACKEND_URL}/quests/complete`, {
-        userId: lp.initData.user.id,
+        userId,
         questId: quest.id
       });
 
@@ -96,6 +109,14 @@ export const QuestsComponent: React.FC = () => {
     }
   };
 
+  const handleQuestCompletion = async (quest: Quest) => {
+    if (quest.type === 'CHANNEL_SUBSCRIPTION') {
+      await handleChannelSubscription(quest);
+    } else {
+      await completeQuest(quest);
+    }
+  };
+
   if (isLoading) return <div>Загрузка квестов...</div>;
   if (error) return <div>{error}</div>;
 
@@ -104,7 +125,14 @@ export const QuestsComponent: React.FC = () => {
     value: (
       <>
         <span>Награда: {quest.reward} BallCry</span>
-        <Button onClick={() => handleQuestCompletion(quest)} style={{ marginLeft: '10px' }}>Выполнить</Button>
+        <Button onClick={() => handleQuestCompletion(quest)} style={{ marginLeft: '10px' }}>
+          {quest.type === 'CHANNEL_SUBSCRIPTION' ? 'Подписаться' : 'Выполнить'}
+        </Button>
+        {quest.type === 'CHANNEL_SUBSCRIPTION' && (
+          <Button onClick={() => checkSubscription(quest)} style={{ marginLeft: '10px' }}>
+            Проверить подписку
+          </Button>
+        )}
       </>
     )
   }));

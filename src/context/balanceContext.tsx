@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 import axios from 'axios';
 
-const BACKEND_URL = 'https://f229ca7dce08cecc50fea81e2829acf7.serveo.net';
+const BACKEND_URL = 'https://c9ef543a6819bed5c8df26556c8997b1.serveo.net';
 
 interface BalanceContextType {
   balance: number;
