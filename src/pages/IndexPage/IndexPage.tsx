@@ -5,7 +5,7 @@ import { NavigationBar } from '@/components/NavigationBar/NavigationBar';
 import { QuestsComponent } from '@/components/QuestsComponent/QuestsComponent';
 
 export const IndexPage: React.FC = () => {
-  const { balance } = useBalance();
+  const { ballcryBalance } = useBalance();
 
   return (
     <div style={{ paddingBottom: '60px' }}>
@@ -17,7 +17,7 @@ export const IndexPage: React.FC = () => {
         background: '#f0f0f0'
       }}>
         <Image src="/ball1.png" alt="BallCry" style={{ width: '50px', height: '50px' }} />
-        <div>Balance: {balance} BallCry</div>
+        <div>Balance: { ballcryBalance } BallCry</div>
       </div>
 
       <Section>

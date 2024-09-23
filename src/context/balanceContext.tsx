@@ -5,7 +5,7 @@ import { useLaunchParams } from '@telegram-apps/sdk-react';
 const BACKEND_URL = 'https://504986964a5f6e10bb87d37830f71850.serveo.net';
 
 interface BalanceContextType {
-  balance: number;
+  ballcryBalance: number;
   addToBalance: (amount: number) => Promise<void>;
   updateBalanceFromServer: () => Promise<void>;
   isLoading: boolean;
@@ -14,7 +14,7 @@ interface BalanceContextType {
 const BalanceContext = createContext<BalanceContextType | undefined>(undefined);
 
 export const BalanceProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [balance, setBalance] = useState<number>(0);
+  const [ballcryBalance, setBallcryBalance] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
   const lp = useLaunchParams();
 
@@ -30,7 +30,12 @@ export const BalanceProvider: React.FC<{ children: ReactNode }> = ({ children })
       const response = await axios.get(`${BACKEND_URL}/user/balance`, {
         params: { userId: lp.initData.user.id }
       });
-      setBalance(response.data.balance);
+      console.log('Balance response:', response.data); // Добавим лог для отладки
+      if (typeof response.data.ballcryBalance === 'number') {
+        setBallcryBalance(response.data.ballcryBalance);
+      } else {
+        console.error('Invalid balance data received:', response.data);
+      }
     } catch (error) {
       console.error('Error updating balance:', error);
     } finally {
@@ -46,19 +51,24 @@ export const BalanceProvider: React.FC<{ children: ReactNode }> = ({ children })
 
     try {
       // Оптимистичное обновление UI
-      setBalance((prevBalance) => prevBalance + amount);
+      setBallcryBalance((prevBalance) => prevBalance + amount);
 
       const response = await axios.post(`${BACKEND_URL}/user/add-balance`, {
         userId: lp.initData.user.id,
         amount
       });
 
+      console.log('Add balance response:', response.data); // Добавим лог для отладки
       // Синхронизация с сервером
-      setBalance(response.data.balance);
+      if (typeof response.data.ballcryBalance === 'number') {
+        setBallcryBalance(response.data.ballcryBalance);
+      } else {
+        console.error('Invalid balance data received:', response.data);
+      }
     } catch (error) {
       console.error('Error adding to balance:', error);
       // В случае ошибки, откатываем изменение
-      setBalance((prevBalance) => prevBalance - amount);
+      setBallcryBalance((prevBalance) => prevBalance - amount);
       throw error;
     }
   }, [lp.initData?.user?.id]);
@@ -68,7 +78,7 @@ export const BalanceProvider: React.FC<{ children: ReactNode }> = ({ children })
   }, [updateBalanceFromServer]);
 
   return (
-    <BalanceContext.Provider value={{ balance, addToBalance, updateBalanceFromServer, isLoading }}>
+    <BalanceContext.Provider value={{ ballcryBalance, addToBalance, updateBalanceFromServer, isLoading }}>
       {children}
     </BalanceContext.Provider>
   );
