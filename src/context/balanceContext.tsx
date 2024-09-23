@@ -6,7 +6,7 @@ const BACKEND_URL = 'https://504986964a5f6e10bb87d37830f71850.serveo.net';
 
 interface BalanceContextType {
   balance: number;
-  addToBalance: (amount: number) => void;
+  addToBalance: (amount: number) => Promise<void>;
   updateBalanceFromServer: () => Promise<void>;
   isLoading: boolean;
 }
@@ -14,7 +14,7 @@ interface BalanceContextType {
 const BalanceContext = createContext<BalanceContextType | undefined>(undefined);
 
 export const BalanceProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [balance, setBalance] = useState<number | null>(null);
+  const [balance, setBalance] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
   const lp = useLaunchParams();
 
@@ -45,13 +45,21 @@ export const BalanceProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
 
     try {
+      // Оптимистичное обновление UI
+      setBalance((prevBalance) => prevBalance + amount);
+
       const response = await axios.post(`${BACKEND_URL}/user/add-balance`, {
         userId: lp.initData.user.id,
         amount
       });
+
+      // Синхронизация с сервером
       setBalance(response.data.balance);
     } catch (error) {
       console.error('Error adding to balance:', error);
+      // В случае ошибки, откатываем изменение
+      setBalance((prevBalance) => prevBalance - amount);
+      throw error;
     }
   }, [lp.initData?.user?.id]);
 
@@ -60,7 +68,7 @@ export const BalanceProvider: React.FC<{ children: ReactNode }> = ({ children })
   }, [updateBalanceFromServer]);
 
   return (
-    <BalanceContext.Provider value={{ balance: balance ?? 0, addToBalance, updateBalanceFromServer, isLoading }}>
+    <BalanceContext.Provider value={{ balance, addToBalance, updateBalanceFromServer, isLoading }}>
       {children}
     </BalanceContext.Provider>
   );
