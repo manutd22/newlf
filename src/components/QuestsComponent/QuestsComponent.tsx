@@ -4,24 +4,15 @@ import { Button } from '@telegram-apps/telegram-ui';
 import { DisplayData, DisplayDataRow } from '@/components/DisplayData/DisplayData';
 import { useBalance } from '../../context/balanceContext';
 
-enum QuestType {
-  CHANNEL_SUBSCRIPTION = 'CHANNEL_SUBSCRIPTION',
-  DAILY_BONUS = 'DAILY_BONUS',
-  INVITE_FRIENDS = 'INVITE_FRIENDS',
-  CONNECT_WALLET = 'CONNECT_WALLET',
-  POST_INSTAGRAM = 'POST_INSTAGRAM',
-  SUBSCRIBE_X = 'SUBSCRIBE_X',
-  TON_TRANSACTION = 'TON_TRANSACTION',
-}
-
 interface Quest {
   id: number;
   title: string;
   reward: number;
-  type: QuestType;
+  type: string;
+  isCompleted: boolean;
 }
 
-const BACKEND_URL = 'https://9a9d2dae3bcfc5992b9f248806a3dd89.serveo.net';
+const BACKEND_URL = 'https://7c6a0912c4c10c904c4cd1beac1ad83e.serveo.net';
 
 export const QuestsComponent: React.FC = () => {
   const [quests, setQuests] = useState<Quest[]>([]);
@@ -37,7 +28,7 @@ export const QuestsComponent: React.FC = () => {
     try {
       setLoading(true);
       const userId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
-      const response = await axios.get(`${BACKEND_URL}/quests/incomplete`, {
+      const response = await axios.get(`${BACKEND_URL}/quests`, {
         params: { userId }
       });
       setQuests(response.data);
@@ -52,17 +43,6 @@ export const QuestsComponent: React.FC = () => {
   const handleQuestCompletion = async (quest: Quest) => {
     try {
       const userId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
-      
-      if (quest.type === QuestType.CHANNEL_SUBSCRIPTION) {
-        const subscriptionCheck = await axios.get(`${BACKEND_URL}/quests/check-subscription`, {
-          params: { userId }
-        });
-        if (!subscriptionCheck.data.isSubscribed) {
-          alert("Пожалуйста, подпишитесь на канал, чтобы выполнить этот квест.");
-          return;
-        }
-      }
-      
       const response = await axios.post(`${BACKEND_URL}/quests/complete`, {
         userId,
         questId: quest.id
@@ -70,7 +50,7 @@ export const QuestsComponent: React.FC = () => {
 
       if (response.data.success) {
         addToBalance(quest.reward);
-        setQuests(quests.filter(q => q.id !== quest.id));
+        setQuests(quests.map(q => q.id === quest.id ? { ...q, isCompleted: true } : q));
       } else {
         throw new Error(response.data.message || 'Не удалось выполнить квест');
       }
@@ -88,7 +68,12 @@ export const QuestsComponent: React.FC = () => {
     value: (
       <>
         <span>Reward: {quest.reward} BallCry</span>
-        <Button onClick={() => handleQuestCompletion(quest)} style={{ marginLeft: '10px' }}>Complete</Button>
+        {!quest.isCompleted && (
+          <Button onClick={() => handleQuestCompletion(quest)} style={{ marginLeft: '10px' }}>Complete</Button>
+        )}
+        {quest.isCompleted && (
+          <span style={{ marginLeft: '10px', color: 'green' }}>Completed</span>
+        )}
       </>
     )
   }));
