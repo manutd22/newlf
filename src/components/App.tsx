@@ -22,7 +22,7 @@ import { BalanceProvider } from '@/context/balanceContext';
 
 import { routes } from '@/navigation/routes.tsx';
 
-const BACKEND_URL = 'https://c9ef543a6819bed5c8df26556c8997b1.serveo.net'; // Замените на ваш реальный URL бэкенда
+const BACKEND_URL = 'https://d484971f92c77aa3b1d90a59f9e45b23.serveo.net'; // Замените на ваш реальный URL бэкенда
 
 const saveTelegramUser = async (initDataRaw: string) => {
   try {

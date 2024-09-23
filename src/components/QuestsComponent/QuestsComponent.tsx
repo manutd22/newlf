@@ -3,7 +3,7 @@ import axios from 'axios';
 import { Button } from '@telegram-apps/telegram-ui';
 import { DisplayData, DisplayDataRow } from '@/components/DisplayData/DisplayData';
 import { useBalance } from '../../context/balanceContext';
-import { initUtils } from '@telegram-apps/sdk-react';
+import { initUtils, useLaunchParams } from '@telegram-apps/sdk-react';
 
 interface Quest {
   id: number;
@@ -14,13 +14,14 @@ interface Quest {
 }
 
 const utils = initUtils();
-const BACKEND_URL = 'https://c9ef543a6819bed5c8df26556c8997b1.serveo.net';
+const BACKEND_URL = 'https://d484971f92c77aa3b1d90a59f9e45b23.serveo.net';
 
 export const QuestsComponent: React.FC = () => {
   const [quests, setQuests] = useState<Quest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { addToBalance } = useBalance();
+  const lp = useLaunchParams();
 
   const showPopup = useCallback((title: string, message: string) => {
     if (window.Telegram?.WebApp?.showPopup) {
@@ -30,19 +31,23 @@ export const QuestsComponent: React.FC = () => {
         buttons: [{ type: 'ok' }]
       });
     } else {
+      console.warn('Telegram WebApp API is not available');
       alert(`${title}: ${message}`);
     }
   }, []);
 
-  const getUserId = useCallback(() => {
-    return window.Telegram?.WebApp?.initDataUnsafe?.user?.id || 'test_user_id';
-  }, []);
-
   const fetchQuests = useCallback(async () => {
-    const userId = getUserId();
+    console.log('Fetching quests...');
+    if (!lp.initData?.user?.id) {
+      console.warn('User ID not available');
+      showPopup('Ошибка', 'ID пользователя недоступен');
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const response = await axios.get(`${BACKEND_URL}/quests`, {
-        params: { userId }
+        params: { userId: lp.initData.user.id }
       });
       setQuests(response.data);
       setIsLoading(false);
@@ -52,7 +57,7 @@ export const QuestsComponent: React.FC = () => {
       setError("Failed to load quests. Please try again later.");
       setIsLoading(false);
     }
-  }, [getUserId, showPopup]);
+  }, [lp.initData?.user?.id, showPopup]);
 
   useEffect(() => {
     fetchQuests();
@@ -72,10 +77,14 @@ export const QuestsComponent: React.FC = () => {
   };
 
   const checkSubscription = async (quest: Quest) => {
-    const userId = getUserId();
+    if (!lp.initData?.user?.id) {
+      showPopup('Ошибка', 'ID пользователя недоступен');
+      return;
+    }
+
     try {
       const subscriptionCheck = await axios.get(`${BACKEND_URL}/quests/check-subscription`, {
-        params: { userId, channelUsername: quest.channelUsername }
+        params: { userId: lp.initData.user.id, channelUsername: quest.channelUsername }
       });
       if (subscriptionCheck.data.isSubscribed) {
         await completeQuest(quest);
@@ -89,10 +98,14 @@ export const QuestsComponent: React.FC = () => {
   };
 
   const completeQuest = async (quest: Quest) => {
-    const userId = getUserId();
+    if (!lp.initData?.user?.id) {
+      showPopup('Ошибка', 'ID пользователя недоступен');
+      return;
+    }
+
     try {
       const response = await axios.post(`${BACKEND_URL}/quests/complete`, {
-        userId,
+        userId: lp.initData.user.id,
         questId: quest.id
       });
 
