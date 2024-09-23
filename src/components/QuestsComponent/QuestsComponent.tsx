@@ -10,11 +10,11 @@ interface Quest {
   title: string;
   reward: number;
   type: string;
-  channelUsername?: string;
 }
 
 const utils = initUtils();
-const BACKEND_URL = 'https://d484971f92c77aa3b1d90a59f9e45b23.serveo.net';
+const BACKEND_URL = 'https://06a7f0008251691636bca2e41b13a319.serveo.net';
+const SUBSCRIPTION_CHANNEL = 'ballcry'; // Замените на реальное имя канала
 
 export const QuestsComponent: React.FC = () => {
   const [quests, setQuests] = useState<Quest[]>([]);
@@ -63,17 +63,12 @@ export const QuestsComponent: React.FC = () => {
     fetchQuests();
   }, [fetchQuests]);
 
-  const handleChannelSubscription = async (quest: Quest) => {
-    if (!quest.channelUsername) {
-      showPopup('Ошибка', 'Не указано имя канала для подписки.');
-      return;
-    }
-
-    const channelUrl = `https://t.me/${quest.channelUsername}`;
+  const handleChannelSubscription = async () => {
+    const channelUrl = `https://t.me/${SUBSCRIPTION_CHANNEL}`;
     
     utils.openTelegramLink(channelUrl);
 
-    showPopup('Подписка на канал', 'Пожалуйста, подпишитесь на канал и затем нажмите "Проверить подписку".');
+    showPopup('Подписка на канал', `Пожалуйста, подпишитесь на канал @${SUBSCRIPTION_CHANNEL} и затем нажмите "Проверить подписку".`);
   };
 
   const checkSubscription = async (quest: Quest) => {
@@ -84,12 +79,12 @@ export const QuestsComponent: React.FC = () => {
 
     try {
       const subscriptionCheck = await axios.get(`${BACKEND_URL}/quests/check-subscription`, {
-        params: { userId: lp.initData.user.id, channelUsername: quest.channelUsername }
+        params: { userId: lp.initData.user.id, channelUsername: SUBSCRIPTION_CHANNEL }
       });
       if (subscriptionCheck.data.isSubscribed) {
         await completeQuest(quest);
       } else {
-        showPopup('Ошибка', 'Вы не подписаны на канал. Пожалуйста, подпишитесь и попробуйте снова.');
+        showPopup('Ошибка', `Вы не подписаны на канал @${SUBSCRIPTION_CHANNEL}. Пожалуйста, подпишитесь и попробуйте снова.`);
       }
     } catch (error) {
       console.error("Error checking subscription:", error);
@@ -124,7 +119,7 @@ export const QuestsComponent: React.FC = () => {
 
   const handleQuestCompletion = async (quest: Quest) => {
     if (quest.type === 'CHANNEL_SUBSCRIPTION') {
-      await handleChannelSubscription(quest);
+      await handleChannelSubscription();
     } else {
       await completeQuest(quest);
     }
@@ -138,6 +133,9 @@ export const QuestsComponent: React.FC = () => {
     value: (
       <>
         <span>Награда: {quest.reward} BallCry</span>
+        {quest.type === 'CHANNEL_SUBSCRIPTION' && (
+          <span style={{ marginLeft: '10px' }}>Канал: @{SUBSCRIPTION_CHANNEL}</span>
+        )}
         <Button onClick={() => handleQuestCompletion(quest)} style={{ marginLeft: '10px' }}>
           {quest.type === 'CHANNEL_SUBSCRIPTION' ? 'Подписаться' : 'Выполнить'}
         </Button>
