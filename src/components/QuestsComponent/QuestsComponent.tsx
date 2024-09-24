@@ -70,6 +70,7 @@ export const QuestsComponent: React.FC = () => {
     fetchQuests();
   }, [fetchQuests]);
 
+
   useEffect(() => {
     const intervalId = setInterval(() => {
       fetchQuests();
