@@ -17,7 +17,7 @@ interface Quest {
 }
 
 const utils = initUtils();
-const BACKEND_URL = 'https://a1f5241cbb68e6e8bffde3f2853b71a0.serveo.net';
+const BACKEND_URL = 'https://28cc2c11d6982debd0964cacf288e278.serveo.net';
 const SUBSCRIPTION_CHANNEL = 'ballcry'; // Замените на реальное имя канала
 
 export const QuestsComponent: React.FC = () => {
