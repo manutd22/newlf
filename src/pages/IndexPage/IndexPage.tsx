@@ -4,6 +4,8 @@ import { useBalance } from '@/context/balanceContext';
 import { NavigationBar } from '@/components/NavigationBar/NavigationBar';
 import { QuestsComponent } from '@/components/QuestsComponent/QuestsComponent';
 
+import ball1 from '../../../assets/ball1.png';
+
 export const IndexPage: React.FC = () => {
   const { balance } = useBalance();
 
@@ -16,7 +18,7 @@ export const IndexPage: React.FC = () => {
         padding: '10px',
         background: '#f0f0f0'
       }}>
-        <Image src="/ball1.png" alt="BallCry" style={{ width: '50px', height: '50px' }} />
+        <Image src={ball1} alt="BallCry" style={{ width: '50px', height: '50px' }} />
         <div>Balance: { balance } BallCry</div>
       </div>
 
