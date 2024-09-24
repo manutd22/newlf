@@ -63,43 +63,9 @@ export const QuestsComponent: React.FC = () => {
     }
   }, [lp.initData?.user?.id, showPopup]);
 
-  const fetchQuestProgress = useCallback(async (quest: Quest) => {
-    if (!lp.initData?.user?.id) {
-      console.warn('User ID not available');
-      return;
-    }
-
-    try {
-      const response = await axios.get(`${BACKEND_URL}/quests/progress`, {
-        params: { userId: lp.initData.user.id, questId: quest.id }
-      });
-      return response.data;
-    } catch (error) {
-      console.error("Error fetching quest progress:", error);
-      showPopup('Ошибка', 'Не удалось загрузить прогресс квеста. Пожалуйста, попробуйте позже.');
-    }
-  }, [lp.initData?.user?.id, showPopup]);
-
   useEffect(() => {
     fetchQuests();
   }, [fetchQuests]);
-
-  useEffect(() => {
-    const loadQuestsWithProgress = async () => {
-      const questsWithProgress = await Promise.all(quests.map(async (quest) => {
-        if (quest.type === 'INVITE_FRIENDS') {
-          const progress = await fetchQuestProgress(quest);
-          return { ...quest, progress };
-        }
-        return quest;
-      }));
-      setQuests(questsWithProgress);
-    };
-
-    if (quests.length > 0) {
-      loadQuestsWithProgress();
-    }
-  }, [quests, fetchQuestProgress]);
 
   const handleChannelSubscription = async () => {
     const channelUrl = `https://t.me/${SUBSCRIPTION_CHANNEL}`;
@@ -159,8 +125,8 @@ export const QuestsComponent: React.FC = () => {
     if (quest.type === 'CHANNEL_SUBSCRIPTION') {
       await handleChannelSubscription();
     } else if (quest.type === 'INVITE_FRIENDS') {
-      // Здесь можно добавить логику для приглашения друзей
-      showPopup('Пригласить друзей', 'Используйте реферальную ссылку для приглашения друзей.');
+      const referralLink = `https://t.me/YourBotName?start=${lp.initData?.user?.id}`;
+      showPopup('Пригласить друзей', `Ваша реферальная ссылка: ${referralLink}\nПоделитесь ею с друзьями, чтобы выполнить квест!`);
     } else {
       await completeQuest(quest);
     }
