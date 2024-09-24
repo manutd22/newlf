@@ -19,6 +19,8 @@ interface Quest {
 const utils = initUtils();
 const BACKEND_URL = 'https://28cc2c11d6982debd0964cacf288e278.serveo.net';
 const SUBSCRIPTION_CHANNEL = 'ballcry'; // Замените на реальное имя канала
+const BOT_USERNAME = 'newcary_bot';
+const APP_NAME = 'newcae';
 
 export const QuestsComponent: React.FC = () => {
   const [quests, setQuests] = useState<Quest[]>([]);
@@ -121,12 +123,28 @@ export const QuestsComponent: React.FC = () => {
     }
   };
 
+  const generateInviteLink = useCallback(() => {
+    if (!lp.initData?.user?.id) {
+      console.error('User ID not available');
+      return null;
+    }
+    return `https://t.me/${BOT_USERNAME}/${APP_NAME}?startapp=invite_${lp.initData.user.id}`;
+  }, [lp.initData?.user?.id]);
+
   const handleQuestCompletion = async (quest: Quest) => {
     if (quest.type === 'CHANNEL_SUBSCRIPTION') {
       await handleChannelSubscription();
     } else if (quest.type === 'INVITE_FRIENDS') {
-      const referralLink = `https://t.me/YourBotName?start=${lp.initData?.user?.id}`;
-      showPopup('Пригласить друзей', `Ваша реферальная ссылка: ${referralLink}\nПоделитесь ею с друзьями, чтобы выполнить квест!`);
+      const referralLink = generateInviteLink();
+      if (referralLink) {
+        showPopup('Пригласить друзей', `Ваша реферальная ссылка: ${referralLink}\nПоделитесь ею с друзьями, чтобы выполнить квест!`);
+        // Опционально: добавить кнопку для копирования ссылки
+        navigator.clipboard.writeText(referralLink)
+          .then(() => console.log('Referral link copied to clipboard'))
+          .catch(err => console.error('Failed to copy referral link:', err));
+      } else {
+        showPopup('Ошибка', 'Не удалось создать реферальную ссылку. Пожалуйста, попробуйте позже.');
+      }
     } else {
       await completeQuest(quest);
     }
