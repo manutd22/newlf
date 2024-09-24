@@ -2,7 +2,7 @@ import React, { createContext, useState, useContext, ReactNode, useEffect, useCa
 import axios from 'axios';
 import { useLaunchParams } from '@telegram-apps/sdk-react';
 
-const BACKEND_URL = 'https://28cc2c11d6982debd0964cacf288e278.serveo.net';
+const BACKEND_URL = 'https://b94c63417033034d960d57516b1eca4f.serveo.net';
 
 interface BalanceContextType {
   balance: number;

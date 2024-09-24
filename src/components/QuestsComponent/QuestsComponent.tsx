@@ -17,8 +17,8 @@ interface Quest {
 }
 
 const utils = initUtils();
-const BACKEND_URL = 'https://28cc2c11d6982debd0964cacf288e278.serveo.net';
-const SUBSCRIPTION_CHANNEL = 'ballcry'; // Замените на реальное имя канала
+const BACKEND_URL = 'https://b94c63417033034d960d57516b1eca4f.serveo.net';
+const SUBSCRIPTION_CHANNEL = 'ballcry';
 const BOT_USERNAME = 'newcary_bot';
 const APP_NAME = 'newcae';
 
@@ -67,6 +67,14 @@ export const QuestsComponent: React.FC = () => {
 
   useEffect(() => {
     fetchQuests();
+  }, [fetchQuests]);
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      fetchQuests();
+    }, 30000); // Обновляем каждые 30 секунд
+
+    return () => clearInterval(intervalId);
   }, [fetchQuests]);
 
   const handleChannelSubscription = async () => {
@@ -138,7 +146,6 @@ export const QuestsComponent: React.FC = () => {
       const referralLink = generateInviteLink();
       if (referralLink) {
         showPopup('Пригласить друзей', `Ваша реферальная ссылка: ${referralLink}\nПоделитесь ею с друзьями, чтобы выполнить квест!`);
-        // Опционально: добавить кнопку для копирования ссылки
         navigator.clipboard.writeText(referralLink)
           .then(() => console.log('Referral link copied to clipboard'))
           .catch(err => console.error('Failed to copy referral link:', err));
