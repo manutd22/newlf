@@ -17,7 +17,7 @@ interface Quest {
 }
 
 const utils = initUtils();
-const BACKEND_URL = 'https://b94c63417033034d960d57516b1eca4f.serveo.net';
+const BACKEND_URL = 'https://fd26a25704424caeb6ff268fd4e39f21.serveo.net';
 const SUBSCRIPTION_CHANNEL = 'ballcry';
 const BOT_USERNAME = 'newcary_bot';
 const APP_NAME = 'newcae';
@@ -55,6 +55,7 @@ export const QuestsComponent: React.FC = () => {
       const response = await axios.get(`${BACKEND_URL}/quests`, {
         params: { userId: lp.initData.user.id }
       });
+      console.log('Quests data:', response.data);
       setQuests(response.data);
       setIsLoading(false);
     } catch (error) {
@@ -174,6 +175,11 @@ export const QuestsComponent: React.FC = () => {
             Проверить подписку
           </Button>
         )}
+        {quest.type === 'INVITE_FRIENDS' && quest.progress && quest.progress.current >= quest.progress.total && (
+          <Button onClick={() => completeQuest(quest)} style={{ marginLeft: '10px' }}>
+            Завершить квест
+          </Button>
+        )}
       </>
     )
   }));
@@ -182,10 +188,17 @@ export const QuestsComponent: React.FC = () => {
   if (error) return <div>{error}</div>;
 
   return (
-    <DisplayData
-      header="Доступные квесты"
-      rows={questRows}
-    />
+    <div>
+      <h2>Доступные квесты</h2>
+      {quests.length > 0 ? (
+        <DisplayData
+          header="Квесты"
+          rows={questRows}
+        />
+      ) : (
+        <p>У вас нет доступных квестов.</p>
+      )}
+    </div>
   );
 };
 
