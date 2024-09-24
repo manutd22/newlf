@@ -10,10 +10,14 @@ interface Quest {
   title: string;
   reward: number;
   type: string;
+  progress?: {
+    current: number;
+    total: number;
+  };
 }
 
 const utils = initUtils();
-const BACKEND_URL = 'https://90740c67105f604b91d1a450e186418b.serveo.net';
+const BACKEND_URL = 'https://a1f5241cbb68e6e8bffde3f2853b71a0.serveo.net';
 const SUBSCRIPTION_CHANNEL = 'ballcry'; // Замените на реальное имя канала
 
 export const QuestsComponent: React.FC = () => {
@@ -59,9 +63,43 @@ export const QuestsComponent: React.FC = () => {
     }
   }, [lp.initData?.user?.id, showPopup]);
 
+  const fetchQuestProgress = useCallback(async (quest: Quest) => {
+    if (!lp.initData?.user?.id) {
+      console.warn('User ID not available');
+      return;
+    }
+
+    try {
+      const response = await axios.get(`${BACKEND_URL}/quests/progress`, {
+        params: { userId: lp.initData.user.id, questId: quest.id }
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching quest progress:", error);
+      showPopup('Ошибка', 'Не удалось загрузить прогресс квеста. Пожалуйста, попробуйте позже.');
+    }
+  }, [lp.initData?.user?.id, showPopup]);
+
   useEffect(() => {
     fetchQuests();
   }, [fetchQuests]);
+
+  useEffect(() => {
+    const loadQuestsWithProgress = async () => {
+      const questsWithProgress = await Promise.all(quests.map(async (quest) => {
+        if (quest.type === 'INVITE_FRIENDS') {
+          const progress = await fetchQuestProgress(quest);
+          return { ...quest, progress };
+        }
+        return quest;
+      }));
+      setQuests(questsWithProgress);
+    };
+
+    if (quests.length > 0) {
+      loadQuestsWithProgress();
+    }
+  }, [quests, fetchQuestProgress]);
 
   const handleChannelSubscription = async () => {
     const channelUrl = `https://t.me/${SUBSCRIPTION_CHANNEL}`;
@@ -120,24 +158,25 @@ export const QuestsComponent: React.FC = () => {
   const handleQuestCompletion = async (quest: Quest) => {
     if (quest.type === 'CHANNEL_SUBSCRIPTION') {
       await handleChannelSubscription();
+    } else if (quest.type === 'INVITE_FRIENDS') {
+      // Здесь можно добавить логику для приглашения друзей
+      showPopup('Пригласить друзей', 'Используйте реферальную ссылку для приглашения друзей.');
     } else {
       await completeQuest(quest);
     }
   };
-
-  if (isLoading) return <div>Загрузка квестов...</div>;
-  if (error) return <div>{error}</div>;
 
   const questRows: DisplayDataRow[] = quests.map(quest => ({
     title: quest.title,
     value: (
       <>
         <span>Награда: {quest.reward} BallCry</span>
-        {quest.type === 'CHANNEL_SUBSCRIPTION' && (
-          <span style={{ marginLeft: '10px' }}>Канал: @{SUBSCRIPTION_CHANNEL}</span>
+        {quest.type === 'INVITE_FRIENDS' && quest.progress && (
+          <span style={{ marginLeft: '10px' }}>Прогресс: {quest.progress.current}/{quest.progress.total}</span>
         )}
         <Button onClick={() => handleQuestCompletion(quest)} style={{ marginLeft: '10px' }}>
-          {quest.type === 'CHANNEL_SUBSCRIPTION' ? 'Подписаться' : 'Выполнить'}
+          {quest.type === 'CHANNEL_SUBSCRIPTION' ? 'Подписаться' : 
+           quest.type === 'INVITE_FRIENDS' ? 'Пригласить друзей' : 'Выполнить'}
         </Button>
         {quest.type === 'CHANNEL_SUBSCRIPTION' && (
           <Button onClick={() => checkSubscription(quest)} style={{ marginLeft: '10px' }}>
@@ -147,6 +186,9 @@ export const QuestsComponent: React.FC = () => {
       </>
     )
   }));
+
+  if (isLoading) return <div>Загрузка квестов...</div>;
+  if (error) return <div>{error}</div>;
 
   return (
     <DisplayData
