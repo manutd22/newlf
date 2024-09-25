@@ -18,7 +18,7 @@ interface Quest {
 }
 
 const utils = initUtils();
-const BACKEND_URL = 'https://141f1c7aff3a4853b88da3e9525d3407.serveo.net';
+const BACKEND_URL = 'https://acd58ebbb811f1ab21cd3046c3989b04.serveo.net';
 const SUBSCRIPTION_CHANNEL = 'ballcry';
 const BOT_USERNAME = 'newcary_bot';
 const APP_NAME = 'newcae';
@@ -165,7 +165,7 @@ export const QuestsComponent: React.FC = () => {
   const connectWallet = async () => {
   try {
     const walletConnectionSource = {
-      universalLink: 'https://manutd22.github.io/newlf/ton-connect',
+      universalLink: 'https://app.tonkeeper.com/ton-connect',
       bridgeUrl: 'https://bridge.tonapi.io/bridge'
     };
 
