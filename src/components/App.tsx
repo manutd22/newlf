@@ -19,10 +19,11 @@ import {
 } from 'react-router-dom';
 import axios from 'axios';
 import { BalanceProvider } from '@/context/balanceContext';
+import { TonConnectUIProvider } from '@tonconnect/ui-react';
 
 import { routes } from '@/navigation/routes.tsx';
 
-const BACKEND_URL = 'https://acd58ebbb811f1ab21cd3046c3989b04.serveo.net'; // Замените на ваш реальный URL бэкенда
+const BACKEND_URL = 'https://0093d33fe6f6048921b2776aee8e77b4.serveo.net'; // Замените на ваш реальный URL бэкенда
 
 const saveTelegramUser = async (initDataRaw: string) => {
   try {
@@ -96,20 +97,22 @@ export const App: FC = () => {
   }
 
   return (
-    <AppRoot
-      appearance={miniApp.isDark ? 'dark' : 'light'}
-      platform={['macos', 'ios'].includes(lp.platform) ? 'ios' : 'base'}
-    >
-      <BalanceProvider>
-        <Router location={location} navigator={reactNavigator}>
-          <Routes>
-            {routes.map((route) => (
-              <Route key={route.path} path={route.path} element={<route.Component />} />
-            ))}
-            <Route path="*" element={<Navigate to="/" />} />
-          </Routes>
-        </Router>
-      </BalanceProvider>
-    </AppRoot>
+    <TonConnectUIProvider manifestUrl="https://manutd22.github.io/newlf/tonconnect-manifest.json">
+      <AppRoot
+        appearance={miniApp.isDark ? 'dark' : 'light'}
+        platform={['macos', 'ios'].includes(lp.platform) ? 'ios' : 'base'}
+      >
+        <BalanceProvider>
+          <Router location={location} navigator={reactNavigator}>
+            <Routes>
+              {routes.map((route) => (
+                <Route key={route.path} path={route.path} element={<route.Component />} />
+              ))}
+              <Route path="*" element={<Navigate to="/" />} />
+            </Routes>
+          </Router>
+        </BalanceProvider>
+      </AppRoot>
+    </TonConnectUIProvider>
   );
 };

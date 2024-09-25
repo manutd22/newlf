@@ -4,7 +4,8 @@ import { Button } from '@telegram-apps/telegram-ui';
 import { DisplayData, DisplayDataRow } from '@/components/DisplayData/DisplayData';
 import { useBalance } from '../../context/balanceContext';
 import { initUtils, useLaunchParams } from '@telegram-apps/sdk-react';
-import TonConnect from '@tonconnect/sdk';
+import { useTonConnectUI } from '@tonconnect/ui-react';
+import { TonConnectButton } from '@tonconnect/ui-react';
 
 interface Quest {
   id: number;
@@ -18,13 +19,10 @@ interface Quest {
 }
 
 const utils = initUtils();
-const BACKEND_URL = 'https://acd58ebbb811f1ab21cd3046c3989b04.serveo.net';
+const BACKEND_URL = 'https://0093d33fe6f6048921b2776aee8e77b4.serveo.net';
 const SUBSCRIPTION_CHANNEL = 'ballcry';
 const BOT_USERNAME = 'newcary_bot';
 const APP_NAME = 'newcae';
-
-// Initialize TonConnect
-const tonConnect = new TonConnect({ manifestUrl: 'https://github.com/manutd22/newlf/tonconnect-manifest.json' });
 
 export const QuestsComponent: React.FC = () => {
   const [quests, setQuests] = useState<Quest[]>([]);
@@ -32,6 +30,7 @@ export const QuestsComponent: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const { addToBalance } = useBalance();
   const lp = useLaunchParams();
+  const [tonConnectUI] = useTonConnectUI();
   const [walletConnected, setWalletConnected] = useState(false);
 
   const showPopup = useCallback((title: string, message: string) => {
@@ -84,9 +83,9 @@ export const QuestsComponent: React.FC = () => {
   }, [fetchQuests]);
 
   useEffect(() => {
-    const unsubscribe = tonConnect.onStatusChange(
-      walletInfo => {
-        if (walletInfo) {
+    const unsubscribe = tonConnectUI.onStatusChange(
+      wallet => {
+        if (wallet) {
           setWalletConnected(true);
           // Здесь можно обновить другую информацию о кошельке
         } else {
@@ -98,7 +97,7 @@ export const QuestsComponent: React.FC = () => {
     return () => {
       unsubscribe();
     };
-  }, []);
+  }, [tonConnectUI]);
 
   const handleChannelSubscription = async () => {
     const channelUrl = `https://t.me/${SUBSCRIPTION_CHANNEL}`;
@@ -163,31 +162,18 @@ export const QuestsComponent: React.FC = () => {
   }, [lp.initData?.user?.id]);
 
   const connectWallet = async () => {
-  try {
-    const walletConnectionSource = {
-      universalLink: 'https://app.tonkeeper.com/ton-connect',
-      bridgeUrl: 'https://bridge.tonapi.io/bridge'
-    };
-
-    const universalLink = tonConnect.connect(walletConnectionSource);
-
-    // Здесь вы можете использовать universalLink, например, открыть его или показать как QR-код
-    console.log('Universal Link:', universalLink);
-
-    // Обновление состояния будет происходить через onStatusChange
-    setWalletConnected(true);
-
-    // Завершение квеста после успешного подключения
-    const connectWalletQuest = quests.find(q => q.type === 'CONNECT_WALLET');
-    if (connectWalletQuest) {
-      await completeQuest(connectWalletQuest);
+    try {
+      await tonConnectUI.connectWallet();
+      showPopup('Успех', 'Кошелек успешно подключен');
+      const connectWalletQuest = quests.find(q => q.type === 'CONNECT_WALLET');
+      if (connectWalletQuest) {
+        await completeQuest(connectWalletQuest);
+      }
+    } catch (error) {
+      console.error("Error connecting wallet:", error);
+      showPopup('Ошибка', 'Не удалось подключить кошелек. Пожалуйста, попробуйте позже.');
     }
-  } catch (error) {
-    console.error("Error connecting wallet:", error);
-    showPopup('Ошибка', 'Не удалось подключить кошелек. Пожалуйста, попробуйте позже.');
-  }
-};
-
+  };
 
   const handleQuestCompletion = async (quest: Quest) => {
     if (quest.type === 'CHANNEL_SUBSCRIPTION') {
@@ -239,6 +225,7 @@ export const QuestsComponent: React.FC = () => {
   return (
     <div>
       <h2>Доступные квесты</h2>
+      <TonConnectButton />
       {isLoading ? (
         <div>Загрузка квестов...</div>
       ) : error ? (
