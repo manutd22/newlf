@@ -12,14 +12,11 @@ interface Quest {
   title: string;
   reward: number;
   type: string;
-  progress?: {
-    current: number;
-    total: number;
-  };
+  progress?: number | boolean;
 }
 
 const utils = initUtils();
-const BACKEND_URL = 'https://d35088a6c777527d44f5853eacb48b2c.serveo.net';
+const BACKEND_URL = 'https://30d31ee78572b3e54c569aac994c6aae.serveo.net';
 const SUBSCRIPTION_CHANNEL = 'ballcry';
 const BOT_USERNAME = 'newcary_bot';
 const APP_NAME = 'newcae';
@@ -75,21 +72,14 @@ export const QuestsComponent: React.FC = () => {
   }, [fetchQuests]);
 
   useEffect(() => {
-    const intervalId = setInterval(() => {
-      fetchQuests();
-    }, 30000); // Обновляем каждые 30 секунд
-
-    return () => clearInterval(intervalId);
-  }, [fetchQuests]);
-
-  useEffect(() => {
     const unsubscribe = tonConnectUI.onStatusChange(
       wallet => {
         if (wallet) {
           setWalletConnected(true);
-          // Здесь можно обновить другую информацию о кошельке
+          updateWalletConnectionStatus(true);
         } else {
           setWalletConnected(false);
+          updateWalletConnectionStatus(false);
         }
       } 
     );
@@ -98,6 +88,23 @@ export const QuestsComponent: React.FC = () => {
       unsubscribe();
     };
   }, [tonConnectUI]);
+
+  const updateWalletConnectionStatus = async (isConnected: boolean) => {
+    if (!lp.initData?.user?.id) {
+      console.warn('User ID not available');
+      return;
+    }
+
+    try {
+      await axios.post(`${BACKEND_URL}/quests/set-wallet-connection`, {
+        userId: lp.initData.user.id,
+        isConnected
+      });
+      fetchQuests(); // Обновляем квесты после изменения статуса подключения кошелька
+    } catch (error) {
+      console.error("Error updating wallet connection status:", error);
+    }
+  };
 
   const handleChannelSubscription = async () => {
     const channelUrl = `https://t.me/${SUBSCRIPTION_CHANNEL}`;
@@ -195,14 +202,21 @@ export const QuestsComponent: React.FC = () => {
     }
   };
 
+  const renderQuestProgress = (quest: Quest) => {
+    if (quest.type === 'INVITE_FRIENDS') {
+      return <span style={{ marginLeft: '10px' }}>Прогресс: {quest.progress as number}/5</span>;
+    } else if (typeof quest.progress === 'boolean') {
+      return <span style={{ marginLeft: '10px' }}>Статус: {quest.progress ? 'Выполнено' : 'Не выполнено'}</span>;
+    }
+    return null;
+  };
+
   const questRows: DisplayDataRow[] = quests.map(quest => ({
     title: quest.title,
     value: (
       <>
         <span>Награда: {quest.reward} BallCry</span>
-        {quest.type === 'INVITE_FRIENDS' && quest.progress && (
-          <span style={{ marginLeft: '10px' }}>Прогресс: {quest.progress.current}/{quest.progress.total}</span>
-        )}
+        {renderQuestProgress(quest)}
         <Button onClick={() => handleQuestCompletion(quest)} style={{ marginLeft: '10px' }}>
           {quest.type === 'CHANNEL_SUBSCRIPTION' ? 'Подписаться' : 
            quest.type === 'INVITE_FRIENDS' ? 'Пригласить друзей' :
@@ -213,7 +227,7 @@ export const QuestsComponent: React.FC = () => {
             Проверить подписку
           </Button>
         )}
-        {quest.type === 'INVITE_FRIENDS' && quest.progress && quest.progress.current >= quest.progress.total && (
+        {quest.type === 'INVITE_FRIENDS' && (quest.progress as number) >= 5 && (
           <Button onClick={() => completeQuest(quest)} style={{ marginLeft: '10px' }}>
             Завершить квест
           </Button>
