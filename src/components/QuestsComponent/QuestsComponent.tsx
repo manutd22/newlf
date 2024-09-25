@@ -16,7 +16,7 @@ interface Quest {
 }
 
 const utils = initUtils();
-const BACKEND_URL = 'https://7f5e6ac17826b2fc47edab97628837e9.serveo.net';
+const BACKEND_URL = 'https://784e5c8c721aa3e33d42f524c285cbf9.serveo.net';
 const SUBSCRIPTION_CHANNEL = 'ballcry';
 const BOT_USERNAME = 'newcary_bot';
 const APP_NAME = 'newcae';
