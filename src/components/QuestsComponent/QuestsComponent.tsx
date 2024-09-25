@@ -16,7 +16,7 @@ interface Quest {
 }
 
 const utils = initUtils();
-const BACKEND_URL = 'https://30d31ee78572b3e54c569aac994c6aae.serveo.net';
+const BACKEND_URL = 'https://7f5e6ac17826b2fc47edab97628837e9.serveo.net';
 const SUBSCRIPTION_CHANNEL = 'ballcry';
 const BOT_USERNAME = 'newcary_bot';
 const APP_NAME = 'newcae';
@@ -100,7 +100,7 @@ export const QuestsComponent: React.FC = () => {
         userId: lp.initData.user.id,
         isConnected
       });
-      fetchQuests(); // Обновляем квесты после изменения статуса подключения кошелька
+      fetchQuests();
     } catch (error) {
       console.error("Error updating wallet connection status:", error);
     }
@@ -142,15 +142,16 @@ export const QuestsComponent: React.FC = () => {
     }
 
     try {
-      const response = await axios.post(`${BACKEND_URL}/quests/complete`, {
-        userId: lp.initData.user.id,
-        questId: quest.id
-      });
+      const response = await axios.post(`${BACKEND_URL}/quests/complete/${lp.initData.user.id}/${quest.id}`);
 
       if (response.data.success) {
         addToBalance(quest.reward);
         setQuests(quests.filter(q => q.id !== quest.id));
         showPopup('Успех', 'Квест успешно выполнен!');
+        
+        if (quest.type === 'DAILY_BONUS') {
+          fetchQuests();
+        }
       } else {
         throw new Error(response.data.message || 'Failed to complete quest');
       }
@@ -197,6 +198,13 @@ export const QuestsComponent: React.FC = () => {
       }
     } else if (quest.type === 'CONNECT_WALLET') {
       await connectWallet();
+    } else if (quest.type === 'DAILY_BONUS') {
+      const availabilityCheck = await axios.get(`${BACKEND_URL}/quests/daily-bonus-available/${lp.initData?.user?.id}`);
+      if (availabilityCheck.data.available) {
+        await completeQuest(quest);
+      } else {
+        showPopup('Ошибка', 'Ежедневный бонус еще не доступен. Попробуйте позже.');
+      }
     } else {
       await completeQuest(quest);
     }
@@ -205,6 +213,8 @@ export const QuestsComponent: React.FC = () => {
   const renderQuestProgress = (quest: Quest) => {
     if (quest.type === 'INVITE_FRIENDS') {
       return <span style={{ marginLeft: '10px' }}>Прогресс: {quest.progress as number}/5</span>;
+    } else if (quest.type === 'DAILY_BONUS') {
+      return <span style={{ marginLeft: '10px' }}>Статус: {quest.progress ? 'Доступен' : 'Недоступен'}</span>;
     } else if (typeof quest.progress === 'boolean') {
       return <span style={{ marginLeft: '10px' }}>Статус: {quest.progress ? 'Выполнено' : 'Не выполнено'}</span>;
     }
@@ -220,7 +230,8 @@ export const QuestsComponent: React.FC = () => {
         <Button onClick={() => handleQuestCompletion(quest)} style={{ marginLeft: '10px' }}>
           {quest.type === 'CHANNEL_SUBSCRIPTION' ? 'Подписаться' : 
            quest.type === 'INVITE_FRIENDS' ? 'Пригласить друзей' :
-           quest.type === 'CONNECT_WALLET' ? 'Подключить кошелек' : 'Выполнить'}
+           quest.type === 'CONNECT_WALLET' ? 'Подключить кошелек' :
+           quest.type === 'DAILY_BONUS' ? 'Получить бонус' : 'Выполнить'}
         </Button>
         {quest.type === 'CHANNEL_SUBSCRIPTION' && (
           <Button onClick={() => checkSubscription(quest)} style={{ marginLeft: '10px' }}>
