@@ -9,7 +9,7 @@ interface LeaderboardUser {
   balance: number;
 }
 
-const BACKEND_URL = 'https://ed790b9f833db1efe4abd8655c263bce.serveo.net';
+const BACKEND_URL = 'https://8571234464907e0736214a7dc0dd0452.serveo.net';
 
 export const LeaderboardPage: React.FC = () => {
   const [users, setUsers] = useState<LeaderboardUser[]>([]);
