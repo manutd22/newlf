@@ -23,7 +23,7 @@ import { TonConnectUIProvider } from '@tonconnect/ui-react';
 
 import { routes } from '@/navigation/routes.tsx';
 
-const BACKEND_URL = 'https://784e5c8c721aa3e33d42f524c285cbf9.serveo.net'; // Замените на ваш реальный URL бэкенда
+const BACKEND_URL = 'https://7cd6479decaf3f8ee7585fd139fc28b9.serveo.net'; // Замените на ваш реальный URL бэкенда
 
 const saveTelegramUser = async (initDataRaw: string) => {
   try {
